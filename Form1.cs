@@ -55,6 +55,10 @@ namespace t9
 
         private bool isLongPress;
 
+        private List<string> possibleWords = new List<string>();
+
+        private int currentWordIndex = 0;
+
         public Form1()
         {
             InitializeComponent();
@@ -302,20 +306,34 @@ namespace t9
 
         private void FindWord()
         {
-            if (word == "")
+            if (string.IsNullOrEmpty(word))
             {
                 foundWord = "";
+                possibleWords.Clear();
+                currentWordIndex = 0;
                 return;
             }
 
-            foundWord = englishWords.Find(w => w.StartsWith(word));
+            possibleWords = englishWords.Where(w => w.StartsWith(word)).ToList();
+
+            if (possibleWords.Count > 0)
+            {
+                currentWordIndex = currentWordIndex < 0 ? currentWordIndex = 0 : currentWordIndex;
+                currentWordIndex = currentWordIndex > possibleWords.Count -1 ? currentWordIndex = possibleWords.Count - 1 : currentWordIndex;
+                //currentWordIndex = 0;
+                foundWord = possibleWords[currentWordIndex];
+            }
+            else
+            {
+                foundWord = "";
+            }
 
             //System.Console.WriteLine(foundWord);
         }
 
         private void WordInsert()
         {
-            if (foundWord == null || foundWord == "" || word == "" || isTextSelected || isErased || isOnInput)
+            if (string.IsNullOrEmpty(foundWord) || string.IsNullOrEmpty(word) || /*isTextSelected ||*/ isErased || isOnInput)
             {
                 return;
             }
@@ -323,16 +341,28 @@ namespace t9
             wordToInsert = foundWord.Substring(word.Length);
             //System.Console.WriteLine(wordToInsert);
 
-            if (wordToInsert != "")
+            if (!string.IsNullOrEmpty(wordToInsert))
             {
                 if (textBox2.InvokeRequired)
                 {
                     textBox2.Invoke(new Action(() =>
                     {
+                        int selectionStart = textBox2.SelectionStart;
+                        int selectionLength = textBox2.SelectionLength;
+                        textBox2.Text = textBox2.Text.Remove(selectionStart, selectionLength);
                         textBox2.Text = textBox2.Text.Insert(position, wordToInsert);
                         textBox2.SelectionStart = position;
                         textBox2.SelectionLength = wordToInsert.Length;
                     }));
+                }
+                else
+                {
+                    int selectionStart = textBox2.SelectionStart;
+                    int selectionLength = textBox2.SelectionLength;
+                    textBox2.Text = textBox2.Text.Remove(selectionStart, selectionLength);
+                    textBox2.Text = textBox2.Text.Insert(position, wordToInsert);
+                    textBox2.SelectionStart = position;
+                    textBox2.SelectionLength = wordToInsert.Length;
                 }
 
                 isTextSelected = true;
@@ -659,7 +689,24 @@ namespace t9
 
         private void button16_Click(object sender, EventArgs e)
         {
+            if (possibleWords.Count > 0)
+            {
+                //isErased = false;
+                currentWordIndex = (currentWordIndex + 1) % possibleWords.Count;
+                foundWord = possibleWords[currentWordIndex];
+                WordInsert();
+            }
+        }
 
+        private void button14_Click(object sender, EventArgs e)
+        {
+            if (possibleWords.Count > 0)
+            {
+                //isErased = false;
+                currentWordIndex = (currentWordIndex - 1 + possibleWords.Count) % possibleWords.Count;
+                foundWord = possibleWords[currentWordIndex];
+                WordInsert();
+            }
         }
     }
 }
